@@ -1,8 +1,16 @@
 # Мафия: Протокол Тень
 
+[![Lint & test](https://github.com/meh-w/ai-mafia/actions/workflows/ci.yml/badge.svg)](https://github.com/meh-w/ai-mafia/actions/workflows/ci.yml)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Flake8](https://img.shields.io/badge/flake8-checked-blueviolet.svg)](https://flake8.pycqa.org/)
+[![Django](https://img.shields.io/badge/Django-4.2-green.svg)](https://www.djangoproject.com/)
+
 Реализация мафии-онлайн, которая превращается в нуарное расследование. В отличие от классических правил,
 каждый игрок получает возможность кастомизации своего персонажа и создания отличительных поведенческих черт,
-а ИИ-ведущий генерирует уникальные наводки на игроков, запутывая или приближая игроков к истине.
+а ИИ-ведущий генерирует уникальные наводки на игроков, запутывая или приближая их к истине.
 
 Проект занял 3 призовое место в проектной деятельности Яндекс Лицея (апрель, 2026).
 

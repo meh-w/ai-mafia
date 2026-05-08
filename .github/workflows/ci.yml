@@ -59,6 +59,18 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: github_actions
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -72,6 +84,8 @@ jobs:
           pip install -r requirements/test.txt
       
       - name: Run Django tests
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/github_actions
         run: |
-          cd lyceum
+          cd mafia
           python manage.py test
