@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Главная — {{ block.super }}{% endblock %}
+
+{% block content %}
+  <div class="container mt-5">
+    <div class="hero-panel mb-4">
+      <h1 class="h2 mb-3">Добро пожаловать</h1>
+      <p class="lead text-secondary mb-4" style="color: #ddd !important;">
+        «Станьте частью легендарного противостояния в новом формате!
+        Соберите компанию друзей и окунитесь в атмосферу нуарного триллера, где каждое преступление 
+        оставляет призрачный след.
+        Город засыпает, просыпается Мафия... Но теперь ночь не проходит бесследно. 
+        На утро ИИ-свидетель представит городу туманные улики: случайный блик очков, тяжелый ритм шагов или едва уловимый аромат.
+        Хватит ли вам хладнокровия, чтобы выстроить алиби, или вы сможете расшифровать метафоры и вычислить убийцу по его приметам? Обсуждайте, сопоставляйте зацепки и делайте свой ход в реальном времени. В этом городе у стен есть уши, а у теней — память.»
+      </p>
+      {% if user.is_authenticated %}
+        <a class="btn btn-outline-light btn-lg" href="{% url 'lobby:lobby_list' %}">Открыть лобби</a>
+      {% else %}
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+          <a class="btn btn-outline-light btn-lg" href="{% url 'login' %}">Войти</a>
+          <a class="btn btn-outline-light btn-lg" href="{% url 'register' %}">Регистрация</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <section class="mb-5">
+    <h2 class="h3 mb-4 text-center">Об игре</h2>
+    <div class="card game-surface border-secondary border-opacity-25 shadow-sm">
+      <div class="card-body col-md-10 mx-auto py-4">
+        <p class="lead text-center mb-4" style="color: #fff !important;">
+          Это психологическая стратегия, где каждое слово может стать фатальным, а любая <strong>деталь внешности — уликой</strong>.
+        </p>
+        <div class="row text-light">
+          <div class="col-md-6 mb-3">
+            <h5 class="text-primary">🏙 Мирным жителям</h5>
+            <p class="small" style="color: #ddd !important;">
+              Ваша задача — распознать блеф, сопоставить ночные улики с описанием игроков и изгнать мафию, пока город не опустел.
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <h5 class="text-danger">🕶 Мафии</h5>
+            <p class="small" style="color: #ddd !important;">
+              Держитесь вместе, оставайтесь незамеченными и планомерно устраняйте мирных. Помните: ваши приметы могут выдать вас на месте преступления!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-5">
+      <h2 class="h3 mb-4 text-center">Правила города</h2>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card h-100 bg-dark border-secondary border-opacity-25 p-3 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="me-3">
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2v2"></path>
+                  <path d="M12 20v2"></path>
+                  <path d="M4.93 4.93l1.41 1.41"></path>
+                  <path d="M17.66 17.66l1.41 1.41"></path>
+                  <path d="M2 12h2"></path>
+                  <path d="M20 12h2"></path>
+                  <path d="M6.34 17.66l-1.41 1.41"></path>
+                  <path d="M19.07 4.93l-1.41 1.41"></path>
+                </svg>
+                <h4 class="h5 mb-0 text-uppercase tracking-wider" style="color: #ddd !important;">День</h4>
+              </div>
+              <ul class="list-unstyled" style="color: #ddd !important;">
+                <li class="mb-2"><strong>• Подготовка:</strong> Опишите свой образ. Ваши приметы увидят все — используйте это для алиби или поиска убийцы.</li>
+                <li class="mb-2"><strong>• Анализ:</strong> Изучайте системные сообщения. ИИ подскажет, какие приметы заметили свидетели ночью.</li>
+                <li class="mb-2"><strong>• Суд:</strong> Ваш голос имеет значение.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100 bg-dark border-secondary border-opacity-25 p-3 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="me-3">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                </svg>
+                <h4 class="h5 mb-0 text-uppercase tracking-wider" style="color: #ddd !important;">Ночь</h4>
+              </div>
+              <ul class="list-unstyled" style="color: #ddd !important;">
+                <li class="mb-2"><strong>• Мафия:</strong> Выбирает жертву. Один из вас наследит: приметы убийцы могут попасть в утреннюю сводку.</li>
+                <li class="mb-2"><strong>• Комиссар:</strong> Проверяет истинную роль игрока, подтверждая или опровергая свои подозрения.</li>
+                <li class="mb-2"><strong>• Доктор:</strong> Пытается спасти жителя. Если цели совпадут, город не понесет потерь.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+  </section>
+  </div>
+{% endblock %}

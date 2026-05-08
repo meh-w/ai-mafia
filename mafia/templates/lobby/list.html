@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Лобби — {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="prelobby-hero mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+      <div>
+        <h1 class="h2 mb-2">Лобби</h1>
+        <p class="text-secondary mb-0">
+          Выберите открытый стол или создайте новый матч под ваш состав.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="{% url 'lobby:session_create' %}">Создать комнату</a>
+        <a class="btn btn-outline-secondary" href="{% url 'lobby:join' %}">Войти по коду</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Открытые игры</h2>
+    <span class="small text-secondary">{{ room_cards|length }} столов</span>
+  </div>
+
+  {% if room_cards %}
+    <ul class="prelobby-grid list-unstyled mb-0">
+      {% for card in room_cards %}
+        <li class="prelobby-room-card">
+          <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+            <span class="font-monospace fw-semibold text-primary">{{ card.session.slug }}</span>
+            <span class="badge text-bg-secondary">{{ card.players_count }}/{{ card.session.max_players }}</span>
+          </div>
+          <div class="prelobby-room-card__meta mb-3">
+            Статус: {{ card.state_text }}
+          </div>
+          {% if card.cta_disabled %}
+            <button type="button" class="btn btn-sm btn-secondary w-100" disabled>
+              {{ card.cta_label }}
+            </button>
+          {% else %}
+            <a class="btn btn-sm btn-primary w-100" href="{{ card.cta_href }}">{{ card.cta_label }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="hero-panel empty py-4 text-center text-secondary">
+      Пока никто не создал комнату. Нажмите «Создать комнату», чтобы начать.
+    </div>
+  {% endif %}
+{% endblock %}

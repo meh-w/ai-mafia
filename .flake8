@@ -1,0 +1,11 @@
+[flake8]
+application-import-names = game,mafia,homepage,users,lobby
+docstring-quotes = double
+exclude = .git,__pycache__,venv,.venv,*/migrations/
+import-order-style = google
+inline-quotes = double
+lines-after-imports = 2
+max-cognitive-complexity = 7
+max-complexity = 7
+max-expression-complexity = 7
+multiline-quotes = double

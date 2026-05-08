@@ -1,0 +1,70 @@
+# English translations for game hints.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "hint_title_lobby"
+msgstr "Lobby"
+
+msgid "hint_body_lobby"
+msgstr "Wait for a full table. The host will start — roles are assigned at random."
+
+msgid "hint_title_day_mafia"
+msgstr "Day: discussion"
+
+msgid "hint_body_day_discussion_mafia"
+msgstr "Discuss with the town. Do not reveal allies. Deflect suspicion."
+
+msgid "hint_title_day_sheriff"
+msgstr "Day: discussion"
+
+msgid "hint_body_day_discussion_sheriff"
+msgstr "Listen to claims. At night you can investigate a player."
+
+msgid "hint_title_day_doctor"
+msgstr "Day: discussion"
+
+msgid "hint_body_day_discussion_doctor"
+msgstr "Join the talk. At night choose who to protect from the kill."
+
+msgid "hint_title_day_civilian"
+msgstr "Day: discussion"
+
+msgid "hint_body_day_discussion_civilian"
+msgstr "Discuss and hunt mafia. Voting comes on the next step."
+
+msgid "hint_title_vote"
+msgstr "Voting"
+
+msgid "hint_body_vote"
+msgstr "Vote a player out or skip if the rules allow."
+
+msgid "hint_title_night_mafia"
+msgstr "Night"
+
+msgid "hint_body_night_mafia"
+msgstr "Coordinate your night pick and mark the selected player."
+
+msgid "hint_title_night_sheriff"
+msgstr "Night"
+
+msgid "hint_body_night_sheriff"
+msgstr "Pick a player for the night investigation. You will learn if they are mafia."
+
+msgid "hint_title_night_doctor"
+msgstr "Night"
+
+msgid "hint_body_night_doctor"
+msgstr "Pick a player to protect. You cannot protect the same player two nights in a row."
+
+msgid "hint_title_night_civilian"
+msgstr "Night"
+
+msgid "hint_body_night_civilian"
+msgstr "Wait for morning. No night action."
+
+msgid "hint_title_finished"
+msgstr "Finished"
+
+msgid "hint_body_finished"
+msgstr "The game is over. See the win summary."

@@ -1,0 +1,16 @@
+{
+  "default_phase_seconds": 120,
+  "phase_seconds": {
+    "lobby": 0,
+    "day_discussion": 180,
+    "day_vote": 120,
+    "night": 90,
+    "finished": 0
+  },
+  "classic": {
+    "first_night_no_kill": false
+  },
+  "rate_limit": {
+    "messages_per_minute": 30
+  }
+}

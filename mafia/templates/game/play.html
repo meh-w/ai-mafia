@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Игра {{ session.slug }} — {{ block.super }}{% endblock %}
+
+{% block content %}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'lobby:lobby_list' %}">Лобби</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Комната</li>
+    </ol>
+  </nav>
+
+  <header class="mb-4">
+    <section class="card game-surface game-hud">
+      <div class="card-body p-3 p-md-4">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+          <div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+              <span class="small text-uppercase text-secondary">Комната</span>
+              <span class="game-room-code font-monospace text-primary">{{ session.slug }}</span>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                id="copy-room-code"
+                data-code="{{ session.slug }}"
+              >
+                Копировать код
+              </button>
+            </div>
+            <h1 class="h3 game-page-title mb-2">Классическая мафия</h1>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span
+                id="game-ws-phase-display"
+                class="badge phase-pill phase-pill--{{ session.phase }} fs-6 px-3 py-2"
+                data-phase="{{ session.phase }}"
+              >
+                {% if session.phase == "lobby" %}Лобби
+                {% elif session.phase == "day_discussion" %}Обсуждение
+                {% elif session.phase == "day_vote" %}Голосование
+                {% elif session.phase == "night" %}Ночь
+                {% elif session.phase == "finished" %}Игра окончена
+                {% else %}{{ session.phase }}
+                {% endif %}
+              </span>
+              <span class="small text-secondary">Раунд <strong id="game-ws-round-display">{{ session.round }}</strong></span>
+              <span id="game-ws-seq-display" class="visually-hidden">{{ session.seq }}</span>
+            </div>
+          </div>
+          <div class="text-md-end d-flex flex-column gap-2">
+            <span class="badge role-badge fs-6">
+              {% if me.role == "mafia" %}Роль: Мафия
+              {% elif me.role == "sheriff" %}Роль: Комиссар
+              {% elif me.role == "doctor" %}Роль: Доктор
+              {% elif me.role == "civilian" %}Роль: Мирный
+              {% else %}Роль: {{ me.role }}
+              {% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="row g-3 align-items-stretch">
+          <div class="col-md-4">
+            <div class="hud-metric">
+              <div class="hud-metric__label">До смены фазы</div>
+              <div
+                class="hud-metric__value"
+                id="game-phase-timer"
+                {% if session.ends_at %}data-ends-at="{{ session.ends_at|date:'c' }}"{% endif %}
+              >
+                {% if session.ends_at %}…{% else %}—{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="hud-metric">
+              <div class="hud-metric__label">Сейчас нужно</div>
+              <div class="hud-metric__value hud-metric__value--objective" id="phase-objective">
+                {% if session.phase == "lobby" %}
+                  Дождаться заполнения стола и запустить игру
+                {% elif session.phase == "night" %}
+                  Выполнить ночное действие по роли или пропустить ход
+                {% elif session.phase == "day_discussion" %}
+                  Обсудить подозрения в общем чате
+                {% elif session.phase == "day_vote" %}
+                  Выбрать игрока для дневного голосования
+                {% elif session.phase == "finished" %}
+                  Посмотреть итог и вернуться в лобби
+                {% else %}
+                  Следить за обновлениями фазы
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div
+              class="hud-metric hud-metric--status"
+              role="status"
+              aria-live="polite"
+            >
+              <div class="hud-metric__label">Статус подключения</div>
+              <div class="d-flex align-items-center gap-2">
+                <span
+                  id="game-ws-status-dot"
+                  class="rounded-circle bg-warning"
+                  style="width: 0.5rem; height: 0.5rem;"
+                ></span>
+                <span id="game-ws-status" class="small text-secondary">Подключение…</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </header>
+
+  {% include "includes/game_phase_rail.html" %}
+
+    {% if session.phase == "preparation" and not me.is_ready %}
+      <div class="card game-surface border-warning mb-4 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title text-warning mb-3">Создание образа персонажа</h5>
+          <p class="text-secondary small">Опишите ваши приметы. ИИ использует их для генерации уникальных улик.</p>
+          <form action="{% url 'game:set_traits' session.pk %}" method="post">
+            {% csrf_token %}
+            {% include "includes/bootstrap_form_fields.html" with form=trait_form %}
+            <button type="submit" class="btn btn-outline-warning w-100 mt-2">Утвердить образ</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if session.phase == "day_discussion" %}
+      <div class="evidence-section mb-4">
+        <h6 class="text-uppercase small text-secondary mb-3">Результаты ночного осмотра:</h6>
+        <div class="d-flex flex-column gap-2">
+          {% for ev in night_evidences %}
+            <div class="card game-surface border-info">
+              <div class="card-body p-3">
+                <div class="small text-info text-uppercase fw-bold" style="font-size: 0.7rem;">Обнаружена зацепка</div>
+                <div class="text-light fst-italic">"{{ ev.text_ui }}"</div>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted small">Этой ночью значимых улик найти не удалось.</p>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-8 order-2 order-lg-1">
+      <section class="card game-surface mb-4">
+        <div class="card-body">
+          <p class="small text-secondary mb-0">
+            Победа мирных: устранить всю мафию. Победа мафии: добиться паритета или перевеса над мирными.
+          </p>
+          {% if not me.is_alive %}
+            <div class="alert alert-danger mt-3 mb-0" role="status">
+              Вы выбыли из партии. Наблюдайте за ходом игры до её завершения.
+            </div>
+          {% endif %}
+
+          {% if session.win_summary %}
+            <div class="alert alert-success mt-3 mb-0" role="status">
+              <strong class="d-block mb-1">Итог партии</strong>
+              {% with win=session.win_summary %}
+                {% if win.primary == "town" %}
+                  <p class="mb-0">Победили мирные — мафия устранена. Мафия проиграла.</p>
+                {% elif win.primary == "mafia" %}
+                  <p class="mb-0">Победила мафия (перевес над мирными). Мирные проиграли.</p>
+                {% elif win.primary == "draw" %}
+                  <p class="mb-0">Ничья.</p>
+                {% else %}
+                  <p class="mb-0">{{ win }}</p>
+                {% endif %}
+                {% if win.primary == "town" %}
+                  {% if me.role == "mafia" %}
+                    <p class="small text-danger mb-0 mt-2">
+                      Ваш результат: поражение. Мирные нашли и устранили мафию.
+                    </p>
+                  {% else %}
+                    <p class="small text-success mb-0 mt-2">
+                      Ваш результат: победа. Вы пережили партию и довели город до победы.
+                    </p>
+                  {% endif %}
+                {% elif win.primary == "mafia" %}
+                  {% if me.role == "mafia" %}
+                    <p class="small text-success mb-0 mt-2">
+                      Ваш результат: победа. Мафия закрепила контроль над городом.
+                    </p>
+                  {% else %}
+                    <p class="small text-danger mb-0 mt-2">
+                      Ваш результат: поражение. Мафия получила решающее преимущество.
+                    </p>
+                  {% endif %}
+                {% elif win.primary == "draw" %}
+                  <p class="small text-secondary mb-0 mt-2">Ваш результат: ничья.</p>
+                {% endif %}
+                {% if win.reason %}
+                  <p class="small text-body-secondary mb-0 mt-2">
+                    Причина завершения:
+                    {% if win.reason == "elimination" %}
+                      Все ключевые игроки одной из сторон выбыли.
+                    {% elif win.reason == "parity" %}
+                      Мафия достигла численного паритета или перевеса.
+                    {% else %}
+                      {{ win.reason }}
+                    {% endif %}
+                  </p>
+                {% endif %}
+              {% endwith %}
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if session.phase == "lobby" %}
+        <section class="card game-surface game-action-card mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title">Лобби</h2>
+
+            <h3 class="h6 mt-4 mb-2">Приметы игроков</h3>
+      <div class="small text-secondary mb-2">
+        Каждый игрок указал свои приметы при входе в игру.
+      </div>
+      <div class="row g-2">
+        {% for p in participants %}
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-2 p-2 bg-dark bg-opacity-25 rounded">
+              <div class="game-player-avatar small" style="width: 28px; height: 28px; font-size: 12px;">
+                {{ p.user.username|first|upper }}
+              </div>
+              <div>
+                <span class="fw-medium">{{ p.user.username }}</span>
+                <div class="small text-info">
+                  {% if p.traits %}
+                    {% for key, value in p.traits.items %}
+                      <span class="badge bg-dark text-info me-1">{{ value }}</span>
+                    {% endfor %}
+                  {% else %}
+                    <span class="text-muted fst-italic">не указаны</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+            <p class="small text-secondary mb-2">
+              Игроков в комнате:
+              <strong id="lobby-player-count">{{ participants|length }}</strong>
+              /
+              <strong id="lobby-max-players">{{ max_players }}</strong>.
+            </p>
+            <div class="progress mb-3 lobby-ready-progress" role="progressbar" aria-label="Заполнение комнаты" aria-valuemin="0" aria-valuemax="{{ max_players }}" aria-valuenow="{{ participants|length }}">
+              <div class="progress-bar" style="width: {% widthratio participants|length max_players 100 %}%"></div>
+            </div>
+            <form
+              method="post"
+              action="{% url 'game:phase_advance' session.pk %}"
+              id="lobby-start-form"
+              class="mb-3{% if participants|length != max_players %} d-none{% endif %}"
+            >
+              {% csrf_token %}
+              <input type="hidden" name="client_seq" value="{{ session.seq }}">
+              <button type="submit" class="btn btn-success w-100">Начать игру</button>
+            </form>
+            <h3 class="h6 mb-2">Игроки</h3>
+            <ul id="lobby-player-list" class="list-unstyled d-flex flex-column gap-2 mb-0">
+              {% for participant in participants %}
+                <li class="game-player-row">
+                  <span class="game-player-avatar" aria-hidden="true">
+                    {{ participant.user.username|first|upper }}
+                  </span>
+                  <div class="flex-grow-1 min-w-0">
+                    <span class="fw-medium">{{ participant.user.username }}</span>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if session.phase == "day_discussion" %}
+        <section class="card game-surface game-action-card mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title">День: обсуждение</h2>
+
+            <div class="alert alert-info mb-3">
+        <h6 class="mb-2">👥 Описание жителей города:</h6>
+        <div class="row g-2">
+          {% for p in participants %}
+            <div class="col-md-6 col-lg-12">
+              <div class="d-flex align-items-start gap-2 p-2 border-bottom border-secondary border-opacity-25">
+                <div class="game-player-avatar small" style="width: 32px; height: 32px; font-size: 14px;">
+                  {{ p.user.username|first|upper }}
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold {% if not p.is_alive %}text-decoration-line-through text-muted{% endif %}">
+                    {{ p.user.username }}
+                  </div>
+                  <div class="small text-info">
+                    {% if p.traits %}
+                      {% for key, value in p.traits.items %}
+                        <span class="badge bg-dark text-info me-1 mb-1">{{ value }}</span>
+                      {% endfor %}
+                    {% else %}
+                      <span class="text-muted fst-italic">приметы не указаны</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+            {% if last_night_result_known %}
+              {% if last_night_killed %}
+                <div class="alert alert-dark py-2 mb-3" role="status">
+                  Ночной итог:
+                  мафия убила
+                  <strong>{{ last_night_killed.user.username }}</strong>.
+                  {% if me.pk == last_night_killed.pk %}
+                    Это вы.
+                  {% endif %}
+                </div>
+              {% else %}
+                <div class="alert alert-secondary py-2 mb-3" role="status">
+                  Ночной итог: этой ночью мафия никого не убила.
+                </div>
+              {% endif %}
+            {% endif %}
+            <div id="private-notifications"></div>
+            <p class="text-secondary small mb-3">
+              Общий чат. После таймера переходите к голосованию.
+            </p>
+            <div id="game-ws-log" class="game-chat-log mb-3" role="log" aria-label="Лог чата"></div>
+            <div class="d-flex flex-column flex-sm-row gap-2">
+              <label class="visually-hidden" for="game-chat-input">Текст сообщения</label>
+              <textarea
+                id="game-chat-input"
+                class="form-control"
+                rows="2"
+                placeholder="Напишите сообщение… (Enter — отправить, Shift+Enter — новая строка)"
+              ></textarea>
+              <button type="button" class="btn btn-primary align-self-stretch align-self-sm-end px-4" id="game-chat-send" style="min-width: 8rem;">
+                Отправить
+              </button>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if session.phase == "night" %}
+        <section class="card game-surface game-action-card mb-4 border-secondary">
+          <div class="card-body">
+            <h2 class="h5 card-title">Ночь</h2>
+            {% if me.role == "mafia" %}
+              <p class="text-secondary small mb-3">
+                Выберите игрока для ночного выбора. Если мафиози несколько, на сервере учитывается
+                <strong>последний отправленный</strong> выбор до конца ночи — договоритесь в чате дня.
+                Можно пропустить действие — это допустимый майндгейм.
+              </p>
+              {% if night_selected_target %}
+                <div class="alert alert-info py-2 mb-3" role="status">
+                  Текущий выбранный игрок:
+                  <strong>{{ night_selected_target.user.username }}</strong>.
+                </div>
+              {% endif %}
+              <form method="post" action="{% url 'game:night_action_submit' session.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="kind" value="kill">
+                <div class="mb-3">
+                  <label class="form-label" for="night-kill-target-form">Выбранный игрок</label>
+                  <select id="night-kill-target-form" class="form-select" name="target_id" required>
+                    <option value="">Не выбрано</option>
+                    {% for participant in participants %}
+                      {% if participant.is_alive and participant.role != "mafia" %}
+                        <option value="{{ participant.pk }}" {% if night_selected_target and night_selected_target.pk == participant.pk %}selected{% endif %}>{{ participant.user.username }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-dark px-4">Подтвердить ночной выбор</button>
+              </form>
+            {% elif me.role == "doctor" %}
+              <p class="text-secondary small mb-3">
+                Выберите игрока для лечения (нельзя подряд одного и того же).
+                Можно пропустить действие — это допустимый майндгейм.
+              </p>
+              {% if night_selected_target %}
+                <div class="alert alert-info py-2 mb-3" role="status">
+                  Текущий выбранный игрок:
+                  <strong>{{ night_selected_target.user.username }}</strong>.
+                </div>
+              {% endif %}
+              <form method="post" action="{% url 'game:night_action_submit' session.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="kind" value="heal">
+                <div class="mb-3">
+                  <label class="form-label" for="night-heal-target-form">Кого защитить</label>
+                  <select id="night-heal-target-form" class="form-select" name="target_id" required>
+                    <option value="">Не выбрано</option>
+                    {% for participant in participants %}
+                      {% if participant.is_alive %}
+                        <option value="{{ participant.pk }}" {% if night_selected_target and night_selected_target.pk == participant.pk %}selected{% endif %}>{{ participant.user.username }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary px-4">Подтвердить защиту</button>
+              </form>
+            {% elif me.role == "sheriff" %}
+              <p class="text-secondary small mb-3">
+                Выберите игрока для проверки.
+                Можно пропустить действие — это допустимый майндгейм.
+              </p>
+              {% if night_selected_target %}
+                <div class="alert alert-info py-2 mb-3" role="status">
+                  Текущий выбранный игрок:
+                  <strong>{{ night_selected_target.user.username }}</strong>.
+                </div>
+              {% endif %}
+              <form method="post" action="{% url 'game:night_action_submit' session.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="kind" value="check">
+                <div class="mb-3">
+                  <label class="form-label" for="night-check-target-form">Кого проверить</label>
+                  <select id="night-check-target-form" class="form-select" name="target_id" required>
+                    <option value="">Не выбрано</option>
+                    {% for participant in participants %}
+                      {% if participant.is_alive and participant.pk != me.pk %}
+                        <option value="{{ participant.pk }}" {% if night_selected_target and night_selected_target.pk == participant.pk %}selected{% endif %}>{{ participant.user.username }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary px-4">Подтвердить проверку</button>
+              </form>
+            {% else %}
+              <p class="text-secondary mb-0">Ожидайте утра.</p>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if session.phase == "day_vote" %}
+        <section class="card game-surface game-action-card mb-4">
+          <div class="card-body">
+            <h2 class="h5 card-title">Голосование</h2>
+            {% if last_night_result_known %}
+              {% if last_night_killed %}
+                <div class="alert alert-dark py-2 mb-3" role="status">
+                  Ночной итог:
+                  мафия убила
+                  <strong>{{ last_night_killed.user.username }}</strong>.
+                  {% if me.pk == last_night_killed.pk %}
+                    Это вы.
+                  {% endif %}
+                </div>
+              {% else %}
+                <div class="alert alert-secondary py-2 mb-3" role="status">
+                  Ночной итог: этой ночью мафия никого не убила.
+                </div>
+              {% endif %}
+            {% endif %}
+            <p class="small text-secondary mb-3">
+              Голосуйте за исключение одного игрока.
+            </p>
+            {% if existing_natural_vote %}
+              <div class="alert alert-info py-2 mb-3" role="status">
+                Ваш голос уже принят:
+                <strong>{{ existing_natural_vote.target.user.username }}</strong>.
+                Переголосование в этом раунде недоступно.
+              </div>
+            {% else %}
+              <form method="post" action="{% url 'game:vote_submit' session.pk %}">
+                {% csrf_token %}
+                {% include "includes/bootstrap_form_fields.html" with form=vote_form %}
+                <button type="submit" class="btn btn-primary px-4">Подтвердить голос</button>
+              </form>
+            {% endif %}
+            {% if vote_tally_rows %}
+              <h3 class="h6 mt-4 mb-2">Сводка по целям</h3>
+              <p class="small text-secondary mb-2">Число голосов по каждой цели.</p>
+              <ul class="list-unstyled small mb-0">
+                {% for row in vote_tally_rows %}
+                  <li class="mb-1 d-flex justify-content-between gap-2">
+                    <span>{{ row.username }}</span>
+                    <strong>{{ row.score }}</strong>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+            {% if vote_rows %}
+              <h3 class="h6 mt-4 mb-2">Журнал голосов</h3>
+              <ul class="small mb-0 ps-0 list-unstyled">
+                {% for vote_record in vote_rows %}
+                  <li class="mb-2 d-flex flex-wrap align-items-center gap-2">
+                    <span>{{ vote_record.voter.user.username }} → {{ vote_record.target.user.username }}</span>
+                    {% if vote_record.kind == "synthetic" %}
+                      <span class="badge bg-info text-dark">синтетический голос</span>
+                    {% else %}
+                      <span class="badge bg-light text-dark">основной голос</span>
+                    {% endif %}
+                    {% if vote_record.artifact_key %}<code class="small">{{ vote_record.artifact_key }}</code>{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if session.phase == "finished" %}
+        <div class="alert alert-info game-surface border-info">
+          <strong>Партия завершена.</strong>
+          {% if not session.win_summary %}
+            Можно вернуться в лобби и начать новую игру.
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if debug and session.phase != "finished" %}
+        <details class="card game-surface mb-4 border-warning border-opacity-50">
+          <summary class="card-header user-select-none text-warning" style="cursor: pointer;">
+            Режим разработчика: переход фазы
+          </summary>
+          <div class="card-body border-top border-secondary border-opacity-25">
+            <p class="small text-secondary mb-3">
+              Ручной advance конечного автомата только при <code>DEBUG</code>. В продакшене скрыто.
+            </p>
+            <form method="post" action="{% url 'game:phase_advance' session.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="client_seq" value="{{ session.seq }}">
+              <button type="submit" class="btn btn-warning btn-sm">Следующая фаза</button>
+            </form>
+          </div>
+        </details>
+      {% endif %}
+
+      <p class="mb-0 mt-3">
+        <a href="{% url 'lobby:lobby_list' %}" class="btn btn-outline-secondary">← В лобби</a>
+      </p>
+    </div>
+
+    <aside class="col-lg-4 order-1 order-lg-2">
+      <div class="card game-surface mb-4 sticky-lg-top" style="top: 1rem;">
+        <div class="card-body">
+          <h2 class="h6 text-secondary text-uppercase small mb-3">Информация партии</h2>
+          <dl class="row small mb-0">
+            <dt class="col-5 text-secondary">Конец фазы (UTC)</dt>
+            <dd class="col-7 mb-2">
+              {% if session.ends_at %}
+                <time datetime="{{ session.ends_at|date:'c' }}">{{ session.ends_at }} UTC</time>
+              {% else %}
+                <span class="text-secondary">не задан</span>
+              {% endif %}
+            </dd>
+            <dt class="col-5 text-secondary">Роль</dt>
+            <dd class="col-7 mb-2">
+              {% if me.role == "mafia" %}Мафия
+              {% elif me.role == "sheriff" %}Комиссар
+              {% elif me.role == "doctor" %}Доктор
+              {% elif me.role == "civilian" %}Мирный
+              {% else %}{{ me.role }}
+              {% endif %}
+            </dd>
+          </dl>
+          <div
+            id="game-hint-panel"
+            class="alert alert-secondary border-secondary py-2 px-3 mb-3 small{% if not hints_payload.hint_body %} d-none{% endif %}"
+          >
+            <div class="fw-semibold mb-1" id="game-hint-title">{{ hints_payload.hint_title|default:"" }}</div>
+            <p class="mb-0" id="game-hint-body">{{ hints_payload.hint_body|default:"" }}</p>
+          </div>
+          {% if not hints_payload.hint_body %}
+            <p class="small text-secondary mb-3">Подсказки скрыты — включите их ниже и сохраните.</p>
+          {% endif %}
+          {% if me.role == "sheriff" and sheriff_checks %}
+            <h3 class="h6 mt-3 mb-2">Ваши проверки</h3>
+            <ul class="small mb-0 ps-3">
+              {% for check in sheriff_checks %}
+                <li>
+                  р{{ check.round }} · {{ check.target_name|default:check.target_id }}:
+                  {{ check.is_mafia|yesno:"мафия,не мафия" }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {% if me.role == "doctor" and me.doctor_last_result %}
+            <h3 class="h6 mt-3 mb-2">Ваши действия</h3>
+            <ul class="small mb-0 ps-3">
+              <li>
+                Вы защитили <strong>{{ me.doctor_last_result.target_name }}</strong>
+              </li>
+            </ul>
+          {% endif %}
+
+          {% if me.role == "mafia" and me.mafia_last_kill %}
+            <h3 class="h6 mt-3 mb-2">Ваши действия</h3>
+            <ul class="small mb-0 ps-3">
+              <li>
+                Вы выбрали <strong>{{ me.mafia_last_kill.target_name }}</strong>
+              </li>
+            </ul>
+          {% endif %}
+
+          <hr class="border-secondary border-opacity-25">
+          <h3 class="h6 mb-2">Настройки подсказок</h3>
+          <form method="post" action="{% url 'game:player_settings' %}" class="small">
+            {% csrf_token %}
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="hints_enabled" id="hints-enabled" value="1" {% if player_profile.hints_enabled %}checked{% endif %}>
+              <label class="form-check-label" for="hints-enabled">Показывать подсказки</label>
+            </div>
+            <div class="mb-2">
+              <label class="form-label" for="pref-lang">Язык подсказок</label>
+              <select name="preferred_language" id="pref-lang" class="form-select form-select-sm">
+                <option value="ru" {% if player_profile.preferred_language == "ru" %}selected{% endif %}>Русский</option>
+                <option value="en" {% if player_profile.preferred_language == "en" %}selected{% endif %}>English</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Сохранить</button>
+          </form>
+        </div>
+      </div>
+
+      {% if debug %}
+        <details class="card game-surface mb-4 border-warning border-opacity-25">
+          <summary class="card-header user-select-none small" style="cursor: pointer;">
+            Отладка: WebSocket
+          </summary>
+          <div class="card-body border-top border-secondary border-opacity-25">
+            <p class="small font-monospace text-break mb-0">{{ ws_url }}</p>
+          </div>
+        </details>
+      {% endif %}
+    </aside>
+  </div>
+
+  <div
+    id="game-ws-root"
+    data-ws-url="{{ ws_url }}"
+    data-state-url="{% url 'game:state' session.pk %}"
+    data-lobby-url="{% url 'lobby:lobby_list' %}"
+    data-phase="{{ session.phase }}"
+    data-role="{{ me.role }}"
+    data-client-seq="{{ session.seq }}"
+    {% if session.ends_at %}data-ends-at="{{ session.ends_at|date:'c' }}"{% endif %}
+    {% if debug %}data-debug="1"{% endif %}
+  ></div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/game_ws.js' %}"></script>
+{% endblock %}

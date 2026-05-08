@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Классическая «Мафия» онлайн: комнаты, роли, день и ночь, комиссар и доктор, голосование и чат в реальном времени."
+    >
+    <meta name="theme-color" content="#1a0f12">
+    <title>{% block title %}Классическая мафия{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+    <link
+      href="{% static 'bootstrap/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    >
+    <link href="{% static 'css/app.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="app-body">
+    <a class="skip-link" href="#main-content">К основному содержимому</a>
+    {% include "includes/header.html" %}
+
+    <main id="main-content" class="container my-4 app-main" tabindex="-1">
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    {% include "includes/footer.html" %}
+
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+      (function () {
+        var yearEl = document.getElementById("app-footer-year");
+        if (yearEl) {
+          yearEl.textContent = String(new Date().getFullYear()) + " ";
+        }
+      })();
+    </script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

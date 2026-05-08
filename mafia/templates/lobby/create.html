@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Новая комната — {{ block.super }}{% endblock %}
+
+{% block content %}
+  <section class="card game-surface">
+    <div class="card-body p-4">
+      <h1 class="h3 mb-2">Создать комнату</h1>
+      <p class="text-secondary mb-4">
+        Настройте размер стола. Партия начнется, когда все места будут заняты.
+      </p>
+      <form method="post" class="mt-3">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="d-flex flex-wrap gap-2 pt-2">
+          <button type="submit" class="btn btn-primary px-4">Создать комнату</button>
+          <a class="btn btn-outline-secondary" href="{% url 'lobby:lobby_list' %}">Назад в лобби</a>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

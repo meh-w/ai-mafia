@@ -1,0 +1,49 @@
+{% with current_phase=session.phase %}
+<nav class="game-phase-rail" aria-label="Текущая фаза партии">
+  <p class="small text-secondary mb-2">
+    Цикл партии: ночь → обсуждение → голосование
+  </p>
+  <ol class="game-phase-rail__track list-unstyled mb-0">
+    <li
+      class="game-phase-rail__step{% if current_phase == 'lobby' %} game-phase-rail__step--active{% endif %}"
+      {% if current_phase == "lobby" %}aria-current="step"{% endif %}
+    >
+      <span class="game-phase-rail__dot" aria-hidden="true"></span>
+      <span class="game-phase-rail__label">Лобби</span>
+    </li>
+    <li
+      class="game-phase-rail__step{% if current_phase == 'night' %} game-phase-rail__step--active{% endif %}"
+      {% if current_phase == "night" %}aria-current="step"{% endif %}
+    >
+      <span class="game-phase-rail__dot" aria-hidden="true"></span>
+      <span class="game-phase-rail__label">Ночь</span>
+    </li>
+    <li
+      class="game-phase-rail__step{% if current_phase == 'day_discussion' %} game-phase-rail__step--active{% endif %}"
+      {% if current_phase == "day_discussion" %}aria-current="step"{% endif %}
+    >
+      <span class="game-phase-rail__dot" aria-hidden="true"></span>
+      <span class="game-phase-rail__label">Обсуждение</span>
+    </li>
+    <li
+      class="game-phase-rail__step{% if current_phase == 'day_vote' %} game-phase-rail__step--active{% endif %}"
+      {% if current_phase == "day_vote" %}aria-current="step"{% endif %}
+    >
+      <span class="game-phase-rail__dot" aria-hidden="true"></span>
+      <span class="game-phase-rail__label">Голосование</span>
+    </li>
+    <li
+      class="game-phase-rail__step{% if current_phase == 'finished' %} game-phase-rail__step--active{% endif %}"
+      {% if current_phase == "finished" %}aria-current="step"{% endif %}
+    >
+      <span class="game-phase-rail__dot" aria-hidden="true"></span>
+      <span class="game-phase-rail__label">Итог</span>
+    </li>
+  </ol>
+  {% if session.round %}
+    <p class="small text-secondary mt-2 mb-0">
+      Текущий раунд цикла: <strong>{{ session.round }}</strong>
+    </p>
+  {% endif %}
+</nav>
+{% endwith %}

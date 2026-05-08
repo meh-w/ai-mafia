@@ -1,0 +1,17 @@
+[tool.pytest.ini_options]
+pythonpath = ["mafia"]
+
+[tool.black]
+line-length = 79
+skip-string-normalization = false
+
+[tool.isort]
+known_first_party = ["game", "mafia", "homepage", "users", "lobby"]
+known_third_party = ["django"]
+lines_after_imports = 2
+profile = "black"
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true

@@ -1,0 +1,77 @@
+name: Lint & test
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements/test.txt
+      
+      - name: Run flake8
+        run: flake8 --verbose
+
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install black
+        run: pip install black
+      
+      - name: Run black check
+        run: black --check --verbose -- .
+
+  check_requirements:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install sort-requirements
+        run: pip install sort-requirements
+      
+      - name: Check requirements sorting
+        run: |
+          sort-requirements --check requirements/dev.txt requirements/prod.txt requirements/test.txt
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements/test.txt
+      
+      - name: Run Django tests
+        run: |
+          cd lyceum
+          python manage.py test

@@ -1,0 +1,70 @@
+# Russian translations for game hints.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "hint_title_lobby"
+msgstr "Лобби"
+
+msgid "hint_body_lobby"
+msgstr "Дождитесь полного стола. Ведущий нажмёт старт — роли будут назначены случайно."
+
+msgid "hint_title_day_mafia"
+msgstr "День: обсуждение"
+
+msgid "hint_body_day_discussion_mafia"
+msgstr "Обсуждайте с городом. Не раскрывайте союзников. Цель — смести подозрения."
+
+msgid "hint_title_day_sheriff"
+msgstr "День: обсуждение"
+
+msgid "hint_body_day_discussion_sheriff"
+msgstr "Слушайте версии. Ночью вы сможете проверить игрока."
+
+msgid "hint_title_day_doctor"
+msgstr "День: обсуждение"
+
+msgid "hint_body_day_discussion_doctor"
+msgstr "Участвуйте в дискуссии. Ночью выберите, кого защитить от убийства."
+
+msgid "hint_title_day_civilian"
+msgstr "День: обсуждение"
+
+msgid "hint_body_day_discussion_civilian"
+msgstr "Обсуждайте подозрения и ищите мафию. Голосование начнётся на следующем шаге."
+
+msgid "hint_title_vote"
+msgstr "Голосование"
+
+msgid "hint_body_vote"
+msgstr "Выберите игрока для исключения или отдайте голос за скип, если доступно."
+
+msgid "hint_title_night_mafia"
+msgstr "Ночь"
+
+msgid "hint_body_night_mafia"
+msgstr "Согласуйте ночной выбор и отметьте выбранного игрока."
+
+msgid "hint_title_night_sheriff"
+msgstr "Ночь"
+
+msgid "hint_body_night_sheriff"
+msgstr "Выберите игрока для ночной проверки. Узнаете, мафия ли он."
+
+msgid "hint_title_night_doctor"
+msgstr "Ночь"
+
+msgid "hint_body_night_doctor"
+msgstr "Выберите игрока для защиты. Нельзя защищать одного и того же две ночи подряд."
+
+msgid "hint_title_night_civilian"
+msgstr "Ночь"
+
+msgid "hint_body_night_civilian"
+msgstr "Ожидайте утра. Действий нет."
+
+msgid "hint_title_finished"
+msgstr "Итог"
+
+msgid "hint_body_finished"
+msgstr "Партия завершена. Смотрите объявление победителя."
